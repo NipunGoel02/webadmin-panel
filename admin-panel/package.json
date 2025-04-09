@@ -4,7 +4,7 @@
   "description": "Admin panel for local authorities with MongoDB backend",
   "main": "server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": " node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
