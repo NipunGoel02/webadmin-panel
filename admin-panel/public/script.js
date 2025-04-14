@@ -1,0 +1,174 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const schemeForm = document.getElementById('schemeForm');
+    const clearBtn = document.getElementById('clearBtn');
+    const searchInput = document.getElementById('searchInput');
+    const schemesContainer = document.getElementById('schemesContainer');
+
+    // API Base URL
+    const API_URL = 'https://webadmin-panel-2.onrender.com/api/schemes';
+
+    // Load all schemes on page load
+    fetchSchemes();
+
+    // Form submission handler
+    schemeForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const schemeData = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            eligibility: {}, // Will be enhanced later
+            benefits: [] // Will be enhanced later
+        };
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(schemeData)
+            });
+
+            if (!response.ok) throw new Error('Failed to save scheme');
+            
+            const newScheme = await response.json();
+            displayScheme(newScheme);
+            schemeForm.reset();
+            showNotification('Scheme saved successfully!', 'success');
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error saving scheme', 'error');
+        }
+    });
+
+    // Clear form handler
+    clearBtn.addEventListener('click', function() {
+        schemeForm.reset();
+    });
+
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const schemeCards = document.querySelectorAll('.scheme-card');
+        
+        schemeCards.forEach(card => {
+            const schemeName = card.querySelector('h3').textContent.toLowerCase();
+            if (schemeName.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    // Fetch all schemes from API
+    async function fetchSchemes() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Failed to fetch schemes');
+            
+            const schemes = await response.json();
+            schemesContainer.innerHTML = '';
+            schemes.forEach(scheme => displayScheme(scheme));
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error loading schemes', 'error');
+        }
+    }
+
+    // Display a single scheme
+    function displayScheme(scheme) {
+        const schemeCard = document.createElement('div');
+        schemeCard.className = 'scheme-card';
+        schemeCard.innerHTML = `
+            <h3>${scheme.name}</h3>
+            <p>${scheme.description}</p>
+            <div class="scheme-actions">
+                <button class="btn-primary" onclick="editScheme('${scheme._id}')">Edit</button>
+                <button class="btn-secondary" onclick="deleteScheme('${scheme._id}')">Delete</button>
+            </div>
+        `;
+        schemesContainer.appendChild(schemeCard);
+    }
+
+    // Show notification
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+});
+
+// Global functions for scheme actions
+async function editScheme(id) {
+    try {
+        const response = await fetch(`${API_URL}/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch scheme');
+        
+        const scheme = await response.json();
+        document.getElementById('name').value = scheme.name;
+        document.getElementById('description').value = scheme.description;
+        
+        // Update form submit to perform PUT instead of POST
+        const form = document.getElementById('schemeForm');
+        form.onsubmit = async function(e) {
+            e.preventDefault();
+            
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: document.getElementById('name').value,
+                        description: document.getElementById('description').value
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to update scheme');
+                
+                const updatedScheme = await response.json();
+                showNotification('Scheme updated successfully!', 'success');
+                fetchSchemes(); // Refresh the list
+                form.reset();
+                form.onsubmit = originalSubmitHandler; // Restore original handler
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error updating scheme', 'error');
+            }
+        };
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error loading scheme for editing', 'error');
+    }
+}
+
+// Store original form submit handler
+const originalSubmitHandler = document.getElementById('schemeForm').onsubmit;
+
+async function deleteScheme(id) {
+    if (confirm('Are you sure you want to delete this scheme?')) {
+        try {
+            const response = await fetch(`http://localhost:3001/api/schemes/${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete scheme');
+            
+            document.querySelector(`.scheme-card[data-id="${id}"]`).remove();
+            showNotification('Scheme deleted successfully!', 'success');
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error deleting scheme', 'error');
+        }
+    }
+}
