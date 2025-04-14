@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const schemesContainer = document.getElementById('schemesContainer');
 
     // API Base URL
-    const API_URL = 'http://localhost:3001 /api/schemes';
+    const API_URL = `${window.location.origin}/api/schemes`;
 
     // Load all schemes on page load
     fetchSchemes();
