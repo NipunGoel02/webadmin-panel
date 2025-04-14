@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const schemesContainer = document.getElementById('schemesContainer');
 
     // API Base URL
-    const API_URL = 'http://localhost:3001/api/schemes';
+    const API_URL = 'https://webadmin-panel-2.onrender.com/api/schemes';
 
     // Load all schemes on page load
     fetchSchemes();
